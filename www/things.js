@@ -28,8 +28,9 @@ function UartPlugin() {
 	};
 
 	this.close = function (name, success, error) {
+		var _this = this;
 		exec(function() {
-			delete this.callbackMap[name];
+			delete _this.callbackMap[name];
 			success();
 		}, error, 'uart', 'close', [name]);
 	};
@@ -75,15 +76,17 @@ function UartPlugin() {
 	};
 
 	this.registerUartDeviceCallback = function (name, callback, success, error) {
+		var _this = this;
 		exec(function() {
-			this.callbackMap[name] = callback;
+			_this.callbackMap[name] = callback;
 			success();
 		}, error, 'uart', 'registerUartDeviceCallback', [name]);
 	};
 
 	this.unregisterUartDeviceCallback = function (name, success, error) {
+		var _this = this;
 		exec(function() {
-			delete this.callbackMap[name];
+			delete _this.callbackMap[name];
 			success();
 		}, error, 'uart', 'unregisterUartDeviceCallback', [name]);
 	};

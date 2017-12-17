@@ -1,5 +1,8 @@
 package org.apache.cordova.things;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import com.google.android.things.pio.PeripheralManagerService;
 import com.google.android.things.pio.UartDevice;
 import com.google.android.things.pio.UartDeviceCallback;
@@ -373,6 +376,7 @@ public class UartPlugin extends CordovaPlugin {
         }
         UartDevice uart = uartMap.get(name);
         final UartPlugin plugin = this;
+        final Handler handler = new Handler(Looper.getMainLooper());
         UartDeviceCallback deviceCallback = new UartDeviceCallback() {
             UartPlugin uartPlugin = plugin;
             @Override
@@ -382,7 +386,7 @@ public class UartPlugin extends CordovaPlugin {
             }
         };
         try {
-            uart.registerUartDeviceCallback(deviceCallback);
+            uart.registerUartDeviceCallback(deviceCallback, handler);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
