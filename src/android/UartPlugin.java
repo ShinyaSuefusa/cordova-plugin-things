@@ -183,13 +183,12 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        List<Byte> bufferList = new ArrayList<Byte>(length);
-        for (int index = 0; index < length; index++) {
-            bufferList.add(buffer[index]);
-        }
         try {
             JSONObject message = new JSONObject();
-            JSONArray arrayBuffer = new JSONArray(bufferList);
+            JSONArray arrayBuffer = new JSONArray();
+            for (int index = 0; index < length; index++) {
+                arrayBuffer.put(buffer[index]);
+            }
             message.put("length", length);
             message.put("buffer", arrayBuffer);
             callbackContext.success(message);
