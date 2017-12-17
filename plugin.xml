@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-things" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>things</name>
+    <description>cordova plugin for AndroidThings</description>
+    <author>Shinya Suefusa</author>
+    <keywords>AndroidThings, raspberry pi 3</keywords>
+    <license>MIT</license>
+  	<engines>
+    	<engine name="cordova-android" version=">6.0.0"/>
+  	</engines>
+    <js-module name="things" src="www/things.js">
+        <clobbers target="cordova.plugins.things" />
+    </js-module>
+    <platform name="android">
+    	<config-file target="res/xml/config.xml" parent="/*">
+    		<feature name="gpio">
+    			<param name="android-package" value="org.apache.cordova.things.GpioPlugin"/>
+    		</feature>
+            <feature name="uart">
+                <param name="android-package" value="org.apache.cordova.things.UartPlugin"/>
+            </feature>
+    	</config-file>
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <uses-library android:name="com.google.android.things"/>
+        </config-file>
+    	<source-file src="src/android/GpioPlugin.java" target-dir="src/org/apache/cordova/things"/>
+        <source-file src="src/android/UartPlugin.java" target-dir="src/org/apache/cordova/things"/>
+    	<source-file src="src/android/build-extras.gradle" target-dir="."/>
+        <framework src="com.google.android.things:androidthings:0.6-devpreview"/>
+    </platform>
+</plugin>

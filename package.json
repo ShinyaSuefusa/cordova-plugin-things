@@ -1,0 +1,22 @@
+{
+	"name": "cordova-plugin-uart",
+	"version": "0.0.1",
+	"description": "uart plugin for AndroidThings",
+	"repository": {
+    	"type": "git",
+    	"url": "https://github.com/ShinyaSuefusa/cordova-plugin-uart.git"
+  	},
+  	"cordova": {
+    	"platforms": [
+     		"android"
+    	]
+  	},
+  	"engines": [
+    	{
+      		"name": "cordova",
+      		"version": ">=6.5.0"
+    	}
+  	],
+  	"author": "Shinya Suefusa",
+  	"license": "MIT"
+}
