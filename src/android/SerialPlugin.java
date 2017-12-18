@@ -170,11 +170,6 @@ public class SerialPlugin extends CordovaPlugin {
             this.value = 0;
             this.count = 0;
 
-            try {
-                gpio.registerGpioCallback(this);
-            } catch (IOException e) {
-                // error!
-            }
         }
     }
 }
