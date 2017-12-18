@@ -24,12 +24,16 @@ public class SerialPlugin extends CordovaPlugin {
 
     private PeripheralManagerService service = new PeripheralManagerService();
     private Map<String, Gpio> gpioMap = new HashMap<String, Gpio>();
-    private Map<String, GpioCallback> callbackMap = new HashMap<String, GpioCallback>();
-    private Map<String, Thread> threadMap = new HashMap<String, Thread>();
+    private Map<String, SerialThread> threadMap = new HashMap<String, SerialThread>();
 
 
     @Override
     public void onDestroy() {
+        for (String key : threadMap.keySet()) {
+            SerialThread thread = threadMap.get(key);
+            thread.shutdown();
+        }
+        threadMap.clear();
         for (String key : gpioMap.keySet()) {
             try {
                 gpioMap.get(key).close();
@@ -38,7 +42,6 @@ public class SerialPlugin extends CordovaPlugin {
             }
         }
         gpioMap.clear();
-        callbackMap.clear();
     }
 
     @Override
@@ -49,6 +52,9 @@ public class SerialPlugin extends CordovaPlugin {
             Integer direction = args.length() > 1 ? args.getInt(1) : null;
             Integer baudrate = args.length() > 2 ? args.getInt(2) : null;
             return openSerial(name, direction, baudrate, callbackContext);
+        } else if ("close".equals(action)) {
+            String name = args.length() > 0 ? args.getString(0) : null;
+            return close(name, callbackContext);
         }
 
         return false;
@@ -75,8 +81,9 @@ public class SerialPlugin extends CordovaPlugin {
             gpio.setDirection(direction);
             gpio.setEdgeTriggerType(Gpio.EDGE_FALLING);
             SerialThread thread = new SerialThread(gpio, baudrate, this, handler);
-            gpio.registerGpioCallback(thread);
+            thread.start();
             gpioMap.put(name, gpio);
+            threadMap.put(name, thread);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -85,17 +92,42 @@ public class SerialPlugin extends CordovaPlugin {
         return true;
     }
 
-    private class SerialThread extends GpioCallback implements Runnable {
+    private boolean close(String name, CallbackContext callbackContext) {
+        if (name == null) {
+            callbackContext.error("name is null!!");
+            return false;
+        }
+        if (!gpioMap.containsKey(name)) {
+            callbackContext.error("not open!!");
+            return false;
+        }
+
+        SerialThread thread = threadMap.get(name);
+        thread.shutdown();
+        threadMap.remove(name);
+
+        Gpio gpio = gpioMap.get(name);
+        try {
+            gpio.close();
+        } catch(IOException e) {
+            // Do nothing.
+        }
+        gpioMap.remove(name);
+        callbackContext.success();
+        return true;
+    }
+
+    private class SerialThread extends Thread {
         private Gpio gpio;
         private int baudrate;
         private SerialPlugin plugin;
         private Handler handler;
         private int nanos;
         private int value = 0;
-        private int count = 0;
         private int dataSize = 8;
-        private int beforeBit = 0;
         private boolean invalidFrame = false;
+        private boolean needStop = false;
+
         public SerialThread(Gpio gpio, int baudrate, SerialPlugin plugin, Handler handler) {
             this.gpio = gpio;
             this.baudrate = baudrate;
@@ -103,23 +135,54 @@ public class SerialPlugin extends CordovaPlugin {
             this.nanos = 1000 * 1000 / baudrate;
             this.handler = handler;
         }
-        @Override
-        public boolean onGpioEdge(Gpio gpio) {
-            gpio.unregisterGpioCallback(this);
-            new Thread(this).start();
-            return super.onGpioEdge(gpio);
+
+        public void shutdown() {
+            this.needStop = true;
+            try {
+                this.join();
+            } catch (InterruptedException e) {
+                // Do nothing.
+            }
         }
+
         @Override
         public void run() {
+            while (!this.needStop) {
+                waitForStartBit();
+                readBits();
+                postValue();
+            }
+        }
+
+        private void waitForStartBit() {
+            while (!this.needStop) {
+                try {
+                    int bit = this.gpio.getValue() ? 1 : 0;
+                    if (bit == 0) {
+                        break;
+                    }
+                    Thread.sleep(0, this.nanos / 2);
+                } catch (IOException e) {
+                    this.invalidFrame = true;
+                    break;
+                } catch (Exception e) {
+                    // do nothing.
+                }
+            }
+        }
+
+        private void readBits() {
             long beforeTime = System.nanoTime();
-            while(true) {
+            int count = 0;
+            int beforeBit = 0;
+            while (!this.needStop) {
                 try {
                     int bit = this.gpio.getValue() ? 1 : 0;
                     boolean update = false;
-                    if (this.beforeBit != bit) {
+                    if (beforeBit != bit) {
                         // 変化した場合
                         update = true;
-                        this.beforeBit = bit;
+                        beforeBit = bit;
                     } else {
                         // 変化しなかった場合
                         long currentTime = System.nanoTime();
@@ -129,7 +192,7 @@ public class SerialPlugin extends CordovaPlugin {
                         }
                     }
                     if (update) {
-                        if (this.count == this.dataSize) {
+                        if (count == this.dataSize) {
                             if (bit == 0) {
                                 // ストップビットだった場合
                                 this.invalidFrame = false;
@@ -141,7 +204,7 @@ public class SerialPlugin extends CordovaPlugin {
                         }
                         beforeTime = System.nanoTime();
                         this.value = this.value << 1 | bit;
-                        this.count++;
+                        count++;
                     }
                     Thread.sleep(0, this.nanos / 2);
                 } catch (IOException e) {
@@ -151,25 +214,27 @@ public class SerialPlugin extends CordovaPlugin {
                     // do nothing.
                 }
             }
+        }
 
-            final SerialPlugin _plugin = this.plugin;
-            final Gpio _gpio = this.gpio;
-            final boolean _invalidFrame = this.invalidFrame;
-            final int _value = this.value;
-            handler.post(new Runnable() {
-                private SerialPlugin serialPlugin = _plugin;
-                private Gpio gpio = _gpio;
-                private boolean invalidFrame = _invalidFrame;
-                private int value = _value;
-                @Override
-                public void run() {
-                    serialPlugin.webView.getEngine().evaluateJavascript("(function() {cordova.plugins.things.serial.callback('"+gpio.getName()+"', '"+(invalidFrame?"error":"success")+"', "+value+");})();", null);
-                }
-            });
+        private void postValue() {
+            if (!this.needStop) {
+                final SerialPlugin _plugin = this.plugin;
+                final Gpio _gpio = this.gpio;
+                final boolean _invalidFrame = this.invalidFrame;
+                final int _value = this.value;
+                handler.post(new Runnable() {
+                    private SerialPlugin serialPlugin = _plugin;
+                    private Gpio gpio = _gpio;
+                    private boolean invalidFrame = _invalidFrame;
+                    private int value = _value;
 
-            this.value = 0;
-            this.count = 0;
-
+                    @Override
+                    public void run() {
+                        serialPlugin.webView.getEngine().evaluateJavascript("(function() {cordova.plugins.things.serial.callback('" + gpio.getName() + "', '" + (invalidFrame ? "error" : "success") + "', " + value + ");})();", null);
+                    }
+                });
+                this.value = 0;
+            }
         }
     }
 }

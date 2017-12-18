@@ -71,6 +71,14 @@ function SerialPlugin() {
 		}, error, 'serial', 'openSerial', [name]);
 	};
 
+	this.close = function (name, success, error) {
+		var _this = this;
+		exec(function() {
+			delete _this.callbackMap[name];
+			if (success) success();
+		}, error, 'serial', 'close', [name]);
+	};
+
 	this.callback = function (name, result, value) {
 		if (this.callbackMap[name]) {
 			this.callbackMap[name](name, result, value);
