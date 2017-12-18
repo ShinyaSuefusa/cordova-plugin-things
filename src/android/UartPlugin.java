@@ -112,8 +112,8 @@ public class UartPlugin extends CordovaPlugin {
             return false;
         }
         if (uartMap.containsKey(name)) {
-            callbackContext.success();
-            return true;
+            callbackContext.error("already open!!");
+            return false;
         }
         try {
             UartDevice uart = service.openUartDevice(name);
@@ -370,8 +370,8 @@ public class UartPlugin extends CordovaPlugin {
             return false;
         }
         if (callbackMap.containsKey(name)) {
-            callbackContext.success();
-            return true;
+            callbackContext.error("already registered!!");
+            return false;
         }
         UartDevice uart = uartMap.get(name);
         final UartPlugin plugin = this;
