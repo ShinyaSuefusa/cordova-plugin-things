@@ -73,7 +73,7 @@ function SerialPlugin() {
 
 	this.callback = function (name, result, value) {
 		if (this.callbackMap[name]) {
-			this.callbackMap[name](name);
+			this.callbackMap[name](name, result, value);
 		}
 	};
 }
