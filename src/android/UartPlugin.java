@@ -86,7 +86,7 @@ public class UartPlugin extends CordovaPlugin {
         } else if ("setStopBits".equals(action)) {
             String name = args.length() > 0 ? args.getString(0) : null;
             int bits = args.length() > 1 ? args.getInt(1) : 0;
-            return setModemControl(name, bits, callbackContext);
+            return setStopBits(name, bits, callbackContext);
         } else if ("write".equals(action)) {
             String name = args.length() > 0 ? args.getString(0) : null;
             JSONArray array = args.length() > 1 ? args.getJSONArray(1) : new JSONArray();
@@ -162,7 +162,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success();
+        callbackContext.success(direction);
         return true;
     }
 
@@ -187,7 +187,7 @@ public class UartPlugin extends CordovaPlugin {
             JSONObject message = new JSONObject();
             JSONArray arrayBuffer = new JSONArray();
             for (int index = 0; index < length; index++) {
-                arrayBuffer.put(buffer[index]);
+                arrayBuffer.put(buffer[index] & 0xFF);
             }
             message.put("length", length);
             message.put("buffer", arrayBuffer);
@@ -215,7 +215,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success();
+        callbackContext.success(duration_msec);
         return true;
     }
 
@@ -235,7 +235,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success();
+        callbackContext.success(rate);
         return true;
     }
 
@@ -255,7 +255,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success();
+        callbackContext.success(size);
         return true;
     }
 
@@ -275,7 +275,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success();
+        callbackContext.success(mode);
         return true;
     }
 
@@ -295,7 +295,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success();
+        callbackContext.success(lines);
         return true;
     }
 
@@ -315,7 +315,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success();
+        callbackContext.success(mode);
         return true;
     }
 
@@ -335,7 +335,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success();
+        callbackContext.success(bits);
         return true;
     }
 
