@@ -11,10 +11,8 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +42,12 @@ public class UartPlugin extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 
-        if ("openUart".equals(action)) {
+        if ("getUartDeviceList".equals(action)) {
+            return getUartDeviceList(callbackContext);
+        } else if ("openUartDevice".equals(action)) {
             String name = args.length() > 0 ? args.getString(0) : null;
             Integer rate = args.length() > 1 ? args.getInt(1) : null;
-            return openUart(name, rate, callbackContext);
+            return openUartDevice(name, rate, callbackContext);
         } else if ("close".equals(action)) {
             String name = args.length() > 0 ? args.getString(0) : null;
             return close(name, callbackContext);
@@ -90,11 +90,7 @@ public class UartPlugin extends CordovaPlugin {
         } else if ("write".equals(action)) {
             String name = args.length() > 0 ? args.getString(0) : null;
             JSONArray array = args.length() > 1 ? args.getJSONArray(1) : new JSONArray();
-            byte[] buffer = new byte[array.length()];
-            for (int index = 0; index < array.length(); index++) {
-                buffer[index] = (byte)array.getInt(index);
-            }
-            return write(name, buffer, callbackContext);
+            return write(name, array, callbackContext);
         } else if ("registerUartDeviceCallback".equals(action)) {
             String name = args.length() > 0 ? args.getString(0) : null;
             return registerUartDeviceCallback(name, callbackContext);
@@ -106,7 +102,17 @@ public class UartPlugin extends CordovaPlugin {
         return false;
     }
 
-    private boolean openUart(String name, Integer rate, CallbackContext callbackContext) {
+    private boolean getUartDeviceList(CallbackContext callbackContext) {
+        List<String> list = service.getUartDeviceList();
+        JSONArray array = new JSONArray();
+        for (String name : list) {
+            array.put(name);
+        }
+        callbackContext.success(array);
+        return true;
+    }
+
+    private boolean openUartDevice(String name, Integer rate, CallbackContext callbackContext) {
         if (name == null) {
             callbackContext.error("name is null!!");
             return false;
@@ -162,7 +168,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(direction);
+        callbackContext.success();
         return true;
     }
 
@@ -183,20 +189,12 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        try {
-            JSONObject message = new JSONObject();
-            JSONArray arrayBuffer = new JSONArray();
-            for (int index = 0; index < length; index++) {
-                arrayBuffer.put(buffer[index] & 0xFF);
-            }
-            message.put("length", length);
-            message.put("buffer", arrayBuffer);
-            callbackContext.success(message);
-            return true;
-        } catch (JSONException e) {
-            callbackContext.error(e.getMessage());
-            return false;
+        JSONArray array = new JSONArray();
+        for (int data : buffer) {
+            array.put(data & 0xFF);
         }
+        callbackContext.success(array);
+        return true;
     }
 
     private boolean sendBreak(String name, int duration_msec, CallbackContext callbackContext) {
@@ -215,7 +213,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(duration_msec);
+        callbackContext.success();
         return true;
     }
 
@@ -235,7 +233,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(rate);
+        callbackContext.success();
         return true;
     }
 
@@ -255,7 +253,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(size);
+        callbackContext.success();
         return true;
     }
 
@@ -275,7 +273,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(mode);
+        callbackContext.success();
         return true;
     }
 
@@ -295,7 +293,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(lines);
+        callbackContext.success();
         return true;
     }
 
@@ -315,7 +313,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(mode);
+        callbackContext.success();
         return true;
     }
 
@@ -335,11 +333,11 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(bits);
+        callbackContext.success();
         return true;
     }
 
-    private boolean write(String name, byte[] buffer, CallbackContext callbackContext) {
+    private boolean write(String name, JSONArray array, CallbackContext callbackContext) {
         if (name == null) {
             callbackContext.error("name is null!!");
             return false;
@@ -349,6 +347,15 @@ public class UartPlugin extends CordovaPlugin {
             return false;
         }
         UartDevice uart = uartMap.get(name);
+        byte[] buffer = new byte[array.length()];
+        try {
+            for (int index = 0; index < array.length(); index++) {
+                buffer[index] = (byte) array.getInt(index);
+            }
+        } catch (JSONException e) {
+            callbackContext.error(e.getMessage());
+            return false;
+        }
         int result;
         try {
             result = uart.write(buffer, buffer.length);

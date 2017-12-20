@@ -14,6 +14,7 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,7 +42,9 @@ public class GpioPlugin extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 
-        if ("openGpio".equals(action)) {
+        if ("getGpioList".equals(action)) {
+            return getGpioList(callbackContext);
+        } else if ("openGpio".equals(action)) {
             String name = args.length() > 0 ? args.getString(0) : null;
             Integer direction = args.length() > 1 ? args.getInt(1) : null;
             return openGpio(name, direction, callbackContext);
@@ -76,6 +79,16 @@ public class GpioPlugin extends CordovaPlugin {
         }
 
         return false;
+    }
+
+    private boolean getGpioList(CallbackContext callbackContext) {
+        List<String> list = service.getGpioList();
+        JSONArray array = new JSONArray();
+        for (String name : list) {
+            array.put(name);
+        }
+        callbackContext.success(array);
+        return true;
     }
 
     private boolean openGpio(String name, Integer direction, CallbackContext callbackContext) {
@@ -142,7 +155,7 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackContext.success(value);
+        callbackContext.success();
         return true;
     }
 
@@ -184,7 +197,7 @@ public class GpioPlugin extends CordovaPlugin {
             return false;
         }
 
-        callbackContext.success(activeType);
+        callbackContext.success();
         return true;
     }
 
@@ -205,7 +218,7 @@ public class GpioPlugin extends CordovaPlugin {
             return false;
         }
 
-        callbackContext.success(direction);
+        callbackContext.success();
         return true;
     }
 
@@ -226,7 +239,7 @@ public class GpioPlugin extends CordovaPlugin {
             return false;
         }
 
-        callbackContext.success(edgeTriggerType);
+        callbackContext.success();
         return true;
     }
 

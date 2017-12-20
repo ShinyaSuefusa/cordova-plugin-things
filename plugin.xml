@@ -16,8 +16,8 @@
     		<feature name="gpio">
     			<param name="android-package" value="org.apache.cordova.things.GpioPlugin"/>
     		</feature>
-            <feature name="serial">
-                <param name="android-package" value="org.apache.cordova.things.SerialPlugin"/>
+            <feature name="i2c">
+                <param name="android-package" value="org.apache.cordova.things.I2cPlugin"/>
             </feature>
             <feature name="uart">
                 <param name="android-package" value="org.apache.cordova.things.UartPlugin"/>
@@ -27,7 +27,7 @@
             <uses-library android:name="com.google.android.things"/>
         </config-file>
     	<source-file src="src/android/GpioPlugin.java" target-dir="src/org/apache/cordova/things"/>
-        <source-file src="src/android/SerialPlugin.java" target-dir="src/org/apache/cordova/things"/>
+        <source-file src="src/android/I2cPlugin.java" target-dir="src/org/apache/cordova/things"/>
         <source-file src="src/android/UartPlugin.java" target-dir="src/org/apache/cordova/things"/>
     	<source-file src="src/android/build-extras.gradle" target-dir="."/>
         <framework src="com.google.android.things:androidthings:0.6-devpreview"/>
