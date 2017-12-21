@@ -190,8 +190,8 @@ public class UartPlugin extends CordovaPlugin {
             return false;
         }
         JSONArray array = new JSONArray();
-        for (int data : buffer) {
-            array.put(data & 0xFF);
+        for (int index = 0; index < length; index++) {
+            array.put(buffer[index] & 0xFF);
         }
         callbackContext.success(array);
         return true;
