@@ -1,6 +1,6 @@
 var exec = require('cordova/exec');
 
-function promiseExec(sucess, error, service, action, args) {
+function promiseExec(success, error, service, action, args) {
 	return new Promise(function (resolve, reject) {
 		exec(function (result) {
 			resolve(result);
@@ -293,7 +293,7 @@ function UartPlugin() {
 	this.openUartDevice = function (name, success, error) {
 	    return new Promise(function (resolve, reject) {
 			exec(function () {
-				var Uart = new Uart(name);
+				var uart = new Uart(name);
 				resolve(uart);
 				if (success) success(uart);
 			}, function (result) {
