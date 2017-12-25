@@ -375,3 +375,176 @@ function UartPlugin() {
 }
 
 exports.uart = new UartPlugin();
+
+function LcdPcf8574(name) {
+	this.name = name;
+}
+
+LcdPcf8574.prototype.getName = function () {
+	return this.name;
+};
+LcdPcf8574.prototype.close = function (success, error) {
+	return exports.lcdpcf8574.close(this.name, success, error);
+};
+LcdPcf8574.prototype.begin = function (cols, rows, charsize, success, error) {
+	return exports.lcdpcf8574.begin(this.name, cols, rows, charsize, success, error);
+};
+LcdPcf8574.prototype.clear = function (success, error) {
+	return exports.lcdpcf8574.clear(this.name, success, error);
+};
+LcdPcf8574.prototype.home = function (success, error) {
+	return exports.lcdpcf8574.home(this.name, success, error);
+};
+LcdPcf8574.prototype.setCursor = function (col, row, success, error) {
+	return exports.lcdpcf8574.setCursor(this.name, col, row, success, error);
+};
+LcdPcf8574.prototype.noDisplay = function (success, error) {
+	return exports.lcdpcf8574.noDisplay(this.name, success, error);
+};
+LcdPcf8574.prototype.display = function (success, error) {
+	return exports.lcdpcf8574.display(this.name, success, error);
+};
+LcdPcf8574.prototype.noBlink = function (success, error) {
+	return exports.lcdpcf8574.noBlink(this.name, success, error);
+};
+LcdPcf8574.prototype.blink = function (success, error) {
+	return exports.lcdpcf8574.blink(this.name, success, error);
+};
+LcdPcf8574.prototype.noCursor = function (success, error) {
+	return exports.lcdpcf8574.noCursor(this.name, success, error);
+};
+LcdPcf8574.prototype.cursor = function (success, error) {
+	return exports.lcdpcf8574.cursor(this.name, success, error);
+};
+LcdPcf8574.prototype.scrollDisplayLeft = function (success, error) {
+	return exports.lcdpcf8574.scrollDisplayLeft(this.name, success, error);
+};
+LcdPcf8574.prototype.scrollDisplayRight = function (success, error) {
+	return exports.lcdpcf8574.scrollDisplayRight(this.name, success, error);
+};
+LcdPcf8574.prototype.leftToRight = function (success, error) {
+	return exports.lcdpcf8574.leftToRight(this.name, success, error);
+};
+LcdPcf8574.prototype.rightToLeft = function (success, error) {
+	return exports.lcdpcf8574.rightToLeft(this.name, success, error);
+};
+LcdPcf8574.prototype.autoscroll = function (success, error) {
+	return exports.lcdpcf8574.autoscroll(this.name, success, error);
+};
+LcdPcf8574.prototype.noAutoscroll = function (success, error) {
+	return exports.lcdpcf8574.noAutoscroll(this.name, success, error);
+};
+LcdPcf8574.prototype.setBacklight = function (enable, success, error) {
+	return exports.lcdpcf8574.setBacklight(this.name, enable, success, error);
+};
+LcdPcf8574.prototype.createChar = function (location, charmap, success, error) {
+	return exports.lcdpcf8574.createChar(this.name, location, charmap, success, error);
+};
+LcdPcf8574.prototype.write = function (value, success, error) {
+	return exports.lcdpcf8574.write(this.name, value, success, error);
+};
+LcdPcf8574.prototype.print = function (message, success, error) {
+	return exports.lcdpcf8574.print(this.name, message, success, error);
+};
+
+function LcdPcf8574Plugin() {
+	this.open = function (name, address, success, error) {
+	    return new Promise(function (resolve, reject) {
+			exec(function () {
+				var lcdpcf8574 = new LcdPcf8574(name);
+				resolve(lcdpcf8574);
+				if (success) success(lcdpcf8574);
+			}, function (result) {
+				reject(result);
+				if (error) error(result);
+			}, 'lcdpcf8574', 'open', [name, address]);
+		});
+	};
+
+	this.close = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'close', [name]);
+	};
+
+	this.begin = function (name, cols, rows, charsize, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'begin', [name, cols, rows, charsize]);
+	};
+
+	this.clear = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'clear', [name]);
+	};
+
+	this.home = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'home', [name]);
+	};
+
+	this.setCursor = function (name, col, row, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'setCursor', [name, col, row]);
+	};
+
+	this.noDisplay = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'noDisplay', [name]);
+	};
+
+	this.display = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'display', [name]);
+	};
+
+	this.noBlink = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'noBlink', [name]);
+	};
+
+	this.blink = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'blink', [name]);
+	};
+
+	this.noCursor = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'noCursor', [name]);
+	};
+
+	this.cursor = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'cursor', [name]);
+	};
+
+	this.scrollDisplayLeft = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'scrollDisplayLeft', [name]);
+	};
+
+	this.scrollDisplayRight = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'scrollDisplayRight', [name]);
+	};
+
+	this.leftToRight = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'leftToRight', [name]);
+	};
+
+	this.rightToLeft = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'rightToLeft', [name]);
+	};
+
+	this.autoscroll = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'autoscroll', [name]);
+	};
+
+	this.noAutoscroll = function (name, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'noAutoscroll', [name]);
+	};
+
+	this.setBacklight = function (name, enable, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'setBacklight', [name, enable]);
+	};
+
+	this.createChar = function (name, location, charmap, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'createChar', [name, location, charmap]);
+	};
+
+	this.write = function (name, value, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'write', [name, value]);
+	};
+
+	this.print = function (name, message, success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'print', [name, message]);
+	};
+}
+
+exports.lcdpcf8574 = new LcdPcf8574Plugin();
+
