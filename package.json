@@ -1,10 +1,10 @@
 {
-	"name": "cordova-plugin-uart",
+	"name": "cordova-plugin-things",
 	"version": "0.0.1",
-	"description": "uart plugin for AndroidThings",
+	"description": "things plugin for AndroidThings",
 	"repository": {
     	"type": "git",
-    	"url": "https://github.com/ShinyaSuefusa/cordova-plugin-uart.git"
+    	"url": "https://github.com/ShinyaSuefusa/cordova-plugin-things.git"
   	},
   	"cordova": {
     	"platforms": [

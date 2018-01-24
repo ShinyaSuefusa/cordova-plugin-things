@@ -12,6 +12,31 @@ function promiseExec(success, error, service, action, args) {
 	});
 }
 
+function AndroidThingsPlugin() {
+	this.getVersionMajor = function (success, error) {
+		return promiseExec(success, error, 'androidthings', 'getVersionMajor', []);
+	};
+
+	this.getVersionMinor = function (success, error) {
+		return promiseExec(success, error, 'androidthings', 'getVersionMinor', []);
+	};
+
+	this.getVersionRevision = function (success, error) {
+		return promiseExec(success, error, 'androidthings', 'getVersionRevision', []);
+	};
+
+	this.getVersionString = function (success, error) {
+		return promiseExec(success, error, 'androidthings', 'getVersionString', []);
+	};
+
+	this.getVersionTag = function (success, error) {
+		return promiseExec(success, error, 'androidthings', 'getVersionTag', []);
+	};
+}
+
+exports.androidthings = new AndroidThingsPlugin();
+
+
 function Gpio(name) {
 	this.name = name;
 }
@@ -56,16 +81,16 @@ function GpioPlugin() {
 
     this.callbackMap = {};
 
-	this.getGpioList = function (name, success, error) {
+	this.getGpioList = function (success, error) {
 		return promiseExec(success, error, 'gpio', 'getGpioList', []);
 	};
 
 	this.openGpio = function (name, success, error) {
 	    return new Promise(function (resolve, reject) {
 			exec(function () {
-				var gpio = new Gpio(name);
-				resolve(gpio);
-				if (success) success(gpio);
+				var device = new Gpio(name);
+				resolve(device);
+				if (success) success(device);
 			}, function (result) {
 				reject(result);
 				if (error) error(result);
@@ -81,12 +106,20 @@ function GpioPlugin() {
 		}, error, 'gpio', 'close', [name]);
 	};
 
+	this.closeAll = function (success, error) {
+		var _this = this;
+		return promiseExec(function() {
+			_this.callbackMap = {};
+			if (success) success();
+		}, error, 'gpio', 'closeAll', []);
+	};
+
 	this.setValue = function (name, value, success, error) {
 		return promiseExec(success, error, 'gpio', 'setValue', [name, value]);
 	};
 
 	this.getValue = function (name, success, error) {
-		return promiseExec(success, error, 'gpio', 'setValue', [name]);
+		return promiseExec(success, error, 'gpio', 'getValue', [name]);
 	};
 
 	this.setActiveType = function (name, activeType, success, error) {
@@ -125,6 +158,7 @@ function GpioPlugin() {
 }
 
 exports.gpio = new GpioPlugin();
+
 
 function I2c(name) {
 	this.name = name;
@@ -168,9 +202,9 @@ function I2cPlugin() {
 	this.openI2cDevice = function (name, success, error) {
 	    return new Promise(function (resolve, reject) {
 			exec(function () {
-				var i2c = new I2c(name);
-				resolve(i2c);
-				if (success) success(i2c);
+				var device = new I2c(name);
+				resolve(device);
+				if (success) success(device);
 			}, function (result) {
 				reject(result);
 				if (error) error(result);
@@ -180,6 +214,10 @@ function I2cPlugin() {
 
 	this.close = function (name, success, error) {
 		return promiseExec(success, error, 'i2c', 'close', [name]);
+	};
+
+	this.closeAll = function (success, error) {
+		return promiseExec(success, error, 'i2c', 'closeAll', []);
 	};
 
 	this.read = function (name, length, success, error) {
@@ -216,6 +254,7 @@ function I2cPlugin() {
 }
 
 exports.i2c = new I2cPlugin();
+
 
 function Uart(name) {
 	this.name = name;
@@ -293,9 +332,9 @@ function UartPlugin() {
 	this.openUartDevice = function (name, success, error) {
 	    return new Promise(function (resolve, reject) {
 			exec(function () {
-				var uart = new Uart(name);
-				resolve(uart);
-				if (success) success(uart);
+				var device = new Uart(name);
+				resolve(device);
+				if (success) success(device);
 			}, function (result) {
 				reject(result);
 				if (error) error(result);
@@ -309,6 +348,14 @@ function UartPlugin() {
 			delete _this.callbackMap[name];
 			if (success) success();
 		}, error, 'uart', 'close', [name]);
+	};
+
+	this.closeAll = function (success, error) {
+		var _this = this;
+		return promiseExec(function() {
+			_this.callbackMap = {};
+			if (success) success();
+		}, error, 'uart', 'closeAll', []);
 	};
 
 	this.flush = function (name, direction, success, error) {
@@ -376,10 +423,242 @@ function UartPlugin() {
 
 exports.uart = new UartPlugin();
 
+
+function Button(name) {
+	this.name = name;
+}
+Button.prototype.getName = function () {
+	return this.name;
+};
+Button.prototype.close = function (success, error) {
+	return exports.button.close(this.name, success, error);
+};
+Button.prototype.setDebounceDelay = function (delay, success, error) {
+	return exports.button.setDebounceDelay(this.name, delay, success, error);
+};
+Button.prototype.register = function (success, error) {
+	return exports.button.register(this.name, success, error);
+};
+Button.prototype.unregister = function (success, error) {
+	return exports.button.unregister(this.name, success, error);
+};
+
+function ButtonPlugin() {
+	this.LogicState = {
+		PRESSED_WHEN_HIGH : 1,
+		PRESSED_WHEN_LOW : 0
+	};
+
+	this.open = function (name, logicLevel, keycode, success, error) {
+	    return new Promise(function (resolve, reject) {
+			exec(function () {
+				var device = new Button(name);
+				resolve(device);
+				if (success) success(device);
+			}, function (result) {
+				reject(result);
+				if (error) error(result);
+			}, 'button', 'open', [name, logicLevel, keycode]);
+		});
+	};
+
+	this.close = function (name, success, error) {
+		return promiseExec(success, error, 'button', 'close', [name]);
+	};
+
+	this.closeAll = function (success, error) {
+		return promiseExec(success, error, 'button', 'closeAll', []);
+	};
+
+	this.setDebounceDelay = function (name, delay, success, error) {
+		return promiseExec(success, error, 'button', 'setDebounceDelay', [name, delay]);
+	};
+
+	this.register = function (name, success, error) {
+		return promiseExec(success, error, 'button', 'register', [name]);
+	};
+
+	this.unregister = function (name, success, error) {
+		return promiseExec(success, error, 'button', 'unregister', [name]);
+	};
+}
+
+exports.button = new ButtonPlugin();
+
+
+function Keypad(name) {
+	this.name = name;
+}
+Keypad.prototype.getName = function () {
+	return this.name;
+};
+Keypad.prototype.close = function (success, error) {
+	return exports.keypad.close(this.name, success, error);
+};
+Keypad.prototype.register = function (success, error) {
+	return exports.keypad.register(this.name, success, error);
+};
+Keypad.prototype.unregister = function (success, error) {
+	return exports.keypad.unregister(this.name, success, error);
+};
+
+function KeypadPlugin() {
+	this.open = function (name, rowPins, colPins, keyCodes, success, error) {
+	    return new Promise(function (resolve, reject) {
+			exec(function () {
+				var device = new Keypad(name);
+				resolve(device);
+				if (success) success(device);
+			}, function (result) {
+				reject(result);
+				if (error) error(result);
+			}, 'keypad', 'open', [name, rowPins, colPins, keyCodes]);
+		});
+	};
+
+	this.close = function (name, success, error) {
+		return promiseExec(success, error, 'keypad', 'close', [name]);
+	};
+
+	this.closeAll = function (success, error) {
+		return promiseExec(success, error, 'keypad', 'closeAll', []);
+	};
+
+	this.register = function (name, success, error) {
+		return promiseExec(success, error, 'keypad', 'register', [name]);
+	};
+
+	this.unregister = function (name, success, error) {
+		return promiseExec(success, error, 'keypad', 'unregister', [name]);
+	};
+}
+
+exports.keypad = new KeypadPlugin();
+
+
+function Ssd1306(name) {
+	this.name = name;
+}
+Ssd1306.prototype.getName = function () {
+	return this.name;
+};
+Ssd1306.prototype.close = function (success, error) {
+	return exports.ssd1306.close(this.name, success, error);
+};
+Ssd1306.prototype.getLcdWidth = function (success, error) {
+	return exports.ssd1306.getLcdWidth(this.name, success, error);
+};
+Ssd1306.prototype.getLcdHeight = function (success, error) {
+	return exports.ssd1306.getLcdHeight(this.name, success, error);
+};
+Ssd1306.prototype.clearPixels = function (success, error) {
+	return exports.ssd1306.clearPixels(this.name, success, error);
+};
+Ssd1306.prototype.setPixel = function (x, y, on, success, error) {
+	return exports.ssd1306.setPixel(this.name, x, y, on, success, error);
+};
+Ssd1306.prototype.setContrast = function (level, success, error) {
+	return exports.ssd1306.setContrast(this.name, level, success, error);
+};
+Ssd1306.prototype.setDisplayOn = function (on, success, error) {
+	return exports.ssd1306.setDisplayOn(this.name, on, success, error);
+};
+Ssd1306.prototype.show = function (success, error) {
+	return exports.ssd1306.show(this.name, success, error);
+};
+Ssd1306.prototype.startScroll = function (startY, finishY, scrollMode, success, error) {
+	return exports.ssd1306.startScroll(this.name, startY, finishY, scrollMode, success, error);
+};
+Ssd1306.prototype.stopScroll = function (success, error) {
+	return exports.ssd1306.stopScroll(this.name, success, error);
+};
+Ssd1306.prototype.setPixels = function (pixels, success, error) {
+	return exports.ssd1306.setPixels(this.name, pixels, success, error);
+};
+Ssd1306.prototype.drawBitmap = function (base64bitmap, xOffset, yOffset, drawWhite, success, error) {
+	return exports.ssd1306.drawBitmap(this.name, base64bitmap, xOffset, yOffset, drawWhite, success, error);
+};
+
+function Ssd1306Plugin() {
+	this.ScrollMode = {
+        RightHorizontal : 0,
+        LeftHorizontal : 1,
+        VerticalRightHorizontal : 2,
+        VerticalLeftHorizontal : 3
+    };
+
+	this.open = function (name, i2cAddress, width, height, success, error) {
+	    return new Promise(function (resolve, reject) {
+			exec(function () {
+				var device = new Ssd1306(name);
+				resolve(device);
+				if (success) success(device);
+			}, function (result) {
+				reject(result);
+				if (error) error(result);
+			}, 'ssd1306', 'open', [name, i2cAddress, width, height]);
+		});
+	};
+
+	this.close = function (name, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'close', [name]);
+	};
+
+	this.closeAll = function (success, error) {
+		return promiseExec(success, error, 'ssd1306', 'closeAll', []);
+	};
+
+	this.getLcdWidth = function (name, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'getLcdWidth', [name]);
+	};
+
+	this.getLcdHeight = function (name, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'getLcdHeight', [name]);
+	};
+
+	this.clearPixels = function (name, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'clearPixels', [name]);
+	};
+	
+	this.setPixel = function (name, x, y, on, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'setPixel', [name, x, y, on]);
+	};
+
+	this.setContrast = function (name, level, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'setContrast', [name, level]);
+	};
+
+	this.setDisplayOn = function (name, on, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'setDisplayOn', [name, on]);
+	};
+
+	this.show = function (name, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'show', [name]);
+	};
+
+	this.startScroll = function (name, startY, finishY, scrollMode, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'startScroll', [name, startY, finishY, scrollMode]);
+	};
+
+	this.stopScroll = function (name, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'stopScroll', [name]);
+	};
+
+	this.setPixels = function (name, pixels, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'setPixels', [name, pixels]);
+	};
+
+	this.drawBitmap = function (name, base64bitmap, xOffset, yOffset, drawWhite, success, error) {
+		return promiseExec(success, error, 'ssd1306', 'drawBitmap', [name, base64bitmap, xOffset, yOffset, drawWhite]);
+	};
+}
+
+exports.ssd1306 = new Ssd1306Plugin();
+
+
 function LcdPcf8574(name) {
 	this.name = name;
 }
-
 LcdPcf8574.prototype.getName = function () {
 	return this.name;
 };
@@ -451,9 +730,9 @@ function LcdPcf8574Plugin() {
 	this.open = function (name, address, success, error) {
 	    return new Promise(function (resolve, reject) {
 			exec(function () {
-				var lcdpcf8574 = new LcdPcf8574(name);
-				resolve(lcdpcf8574);
-				if (success) success(lcdpcf8574);
+				var device = new LcdPcf8574(name);
+				resolve(device);
+				if (success) success(device);
 			}, function (result) {
 				reject(result);
 				if (error) error(result);
@@ -463,6 +742,10 @@ function LcdPcf8574Plugin() {
 
 	this.close = function (name, success, error) {
 		return promiseExec(success, error, 'lcdpcf8574', 'close', [name]);
+	};
+
+	this.closeAll = function (success, error) {
+		return promiseExec(success, error, 'lcdpcf8574', 'closeAll', []);
 	};
 
 	this.begin = function (name, cols, rows, charsize, success, error) {

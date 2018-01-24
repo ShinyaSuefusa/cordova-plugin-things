@@ -1,4 +1,4 @@
-package org.apache.cordova.things;
+package org.apache.cordova.android.things;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -23,19 +23,19 @@ import java.util.Map;
 public class GpioPlugin extends CordovaPlugin {
 
     private PeripheralManagerService service = new PeripheralManagerService();
-    private Map<String, Gpio> gpioMap = new HashMap<String, Gpio>();
-    private Map<String, GpioCallback> callbackMap = new HashMap<String, GpioCallback>();
+    private Map<String, Gpio> deviceMap = new HashMap<>();
+    private Map<String, GpioCallback> callbackMap = new HashMap<>();
 
     @Override
     public void onDestroy() {
-        for (String key : gpioMap.keySet()) {
+        for (Gpio device : deviceMap.values()) {
             try {
-                gpioMap.get(key).close();
+                device.close();
             } catch(IOException e) {
                 // Do nothing.
             }
         }
-        gpioMap.clear();
+        deviceMap.clear();
         callbackMap.clear();
     }
 
@@ -45,39 +45,43 @@ public class GpioPlugin extends CordovaPlugin {
         if ("getGpioList".equals(action)) {
             return getGpioList(callbackContext);
         } else if ("openGpio".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            Integer direction = args.length() > 1 ? args.getInt(1) : null;
+            String name = args.getString(0);
+            int direction = args.optInt(1, Gpio.DIRECTION_OUT_INITIALLY_LOW);
             return openGpio(name, direction, callbackContext);
         } else if ("close".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
+            String name = args.getString(0);
             return close(name, callbackContext);
+        } else if ("closeAll".equals(action)) {
+            onDestroy();
+            callbackContext.success();
+            return true;
         } else if ("setValue".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            Integer value = args.length() > 1 ? args.getInt(1) : null;
+            String name = args.getString(0);
+            int value = args.optInt(1, 1);
             return setValue(name, value, callbackContext);
         } else if ("getValue".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
+            String name = args.getString(0);
             return getValue(name, callbackContext);
         } else if ("setActiveType".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int activeType = args.length() > 1 ? args.getInt(1) : Gpio.ACTIVE_LOW;
+            String name = args.getString(0);
+            int activeType = args.optInt(1, Gpio.ACTIVE_LOW);
             return setActiveType(name, activeType, callbackContext);
         } else if ("setDirection".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int direction = args.length() > 1 ? args.getInt(1) : Gpio.DIRECTION_OUT_INITIALLY_LOW;
+            String name = args.getString(0);
+            int direction = args.optInt(1, Gpio.DIRECTION_OUT_INITIALLY_LOW);
             return setDirection(name, direction, callbackContext);
         } else if ("setEdgeTriggerType".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int edgeTriggerType = args.length() > 1 ? args.getInt(1) : Gpio.EDGE_NONE;
+            String name = args.getString(0);
+            int edgeTriggerType = args.optInt(1, Gpio.EDGE_NONE);
             return setEdgeTriggerType(name, edgeTriggerType, callbackContext);
         } else if ("registerGpioCallback".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
+            String name = args.getString(0);
             return registerGpioCallback(name, callbackContext);
         } else if ("unregisterGpioCallback".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
+            String name = args.getString(0);
             return unregisterGpioCallback(name, callbackContext);
         }
-
+        callbackContext.error("undefined function. [" + action + "]");
         return false;
     }
 
@@ -96,17 +100,14 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (gpioMap.containsKey(name)) {
+        if (deviceMap.containsKey(name)) {
             callbackContext.error("already open!!");
             return false;
         }
-        if (direction == null) {
-            direction = Gpio.DIRECTION_OUT_INITIALLY_LOW;
-        }
         try {
-            Gpio gpio = service.openGpio(name);
-            gpio.setDirection(direction);
-            gpioMap.put(name, gpio);
+            Gpio device = service.openGpio(name);
+            device.setDirection(direction);
+            deviceMap.put(name, device);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -120,17 +121,17 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!gpioMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        Gpio gpio = gpioMap.get(name);
+        Gpio device = deviceMap.get(name);
         try {
-            gpio.close();
+            device.close();
         } catch(IOException e) {
             // Do nothing.
         }
-        gpioMap.remove(name);
+        deviceMap.remove(name);
         callbackMap.remove(name);
         callbackContext.success();
         return true;
@@ -141,16 +142,13 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!gpioMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        Gpio gpio = gpioMap.get(name);
-        if (value == null) {
-            value = 1;
-        }
+        Gpio device = deviceMap.get(name);
         try {
-            gpio.setValue(value != 0);
+            device.setValue(value != 0);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -164,13 +162,13 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!gpioMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        Gpio gpio = gpioMap.get(name);
+        Gpio device = deviceMap.get(name);
         try {
-            int value = gpio.getValue() ? 1 : 0;
+            int value = device.getValue() ? 1 : 0;
             callbackContext.success(value);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
@@ -185,13 +183,13 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!gpioMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        Gpio gpio = gpioMap.get(name);
+        Gpio device = deviceMap.get(name);
         try {
-            gpio.setActiveType(activeType);
+            device.setActiveType(activeType);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -206,13 +204,13 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!gpioMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        Gpio gpio = gpioMap.get(name);
+        Gpio device = deviceMap.get(name);
         try {
-            gpio.setDirection(direction);
+            device.setDirection(direction);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -227,13 +225,13 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!gpioMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        Gpio gpio = gpioMap.get(name);
+        Gpio device = deviceMap.get(name);
         try {
-            gpio.setEdgeTriggerType(edgeTriggerType);
+            device.setEdgeTriggerType(edgeTriggerType);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -248,7 +246,7 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!gpioMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
@@ -256,10 +254,10 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("already registered!!");
             return false;
         }
-        Gpio gpio = gpioMap.get(name);
+        Gpio device = deviceMap.get(name);
         final GpioPlugin plugin = this;
         final Handler handler = new Handler(Looper.getMainLooper());
-        GpioCallback gpioCallback = new GpioCallback() {
+        GpioCallback callback = new GpioCallback() {
             GpioPlugin gpioPlugin = plugin;
             @Override
             public boolean onGpioEdge(Gpio gpio) {
@@ -268,13 +266,13 @@ public class GpioPlugin extends CordovaPlugin {
             }
         };
         try {
-            gpio.registerGpioCallback(gpioCallback, handler);
+            device.registerGpioCallback(callback, handler);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
         }
 
-        callbackMap.put(name, gpioCallback);
+        callbackMap.put(name, callback);
         callbackContext.success();
         return true;
     }
@@ -284,7 +282,7 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!gpioMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
@@ -292,9 +290,9 @@ public class GpioPlugin extends CordovaPlugin {
             callbackContext.error("not registered!!");
             return false;
         }
-        Gpio gpio = gpioMap.get(name);
-        GpioCallback gpioCallback = callbackMap.get(name);
-        gpio.unregisterGpioCallback(gpioCallback);
+        Gpio device = deviceMap.get(name);
+        GpioCallback callback = callbackMap.get(name);
+        device.unregisterGpioCallback(callback);
         callbackMap.remove(name);
         callbackContext.success();
         return true;

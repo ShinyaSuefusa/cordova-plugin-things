@@ -13,28 +13,50 @@
     </js-module>
     <platform name="android">
     	<config-file target="res/xml/config.xml" parent="/*">
+            <feature name="androidthings">
+                <param name="android-package" value="org.apache.cordova.android.things.AndroidThingsPlugin"/>
+            </feature>
     		<feature name="gpio">
-    			<param name="android-package" value="org.apache.cordova.things.GpioPlugin"/>
+    			<param name="android-package" value="org.apache.cordova.android.things.GpioPlugin"/>
     		</feature>
             <feature name="i2c">
-                <param name="android-package" value="org.apache.cordova.things.I2cPlugin"/>
+                <param name="android-package" value="org.apache.cordova.android.things.I2cPlugin"/>
             </feature>
             <feature name="uart">
-                <param name="android-package" value="org.apache.cordova.things.UartPlugin"/>
+                <param name="android-package" value="org.apache.cordova.android.things.UartPlugin"/>
+            </feature>
+            <feature name="button">
+                <param name="android-package" value="org.apache.cordova.android.things.driver.ButtonPlugin"/>
+            </feature>
+            <feature name="keypad">
+                <param name="android-package" value="org.apache.cordova.android.things.driver.MatrixKeypadPlugin"/>
+            </feature>
+            <feature name="ssd1306">
+                <param name="android-package" value="org.apache.cordova.android.things.driver.Ssd1306Plugin"/>
             </feature>
             <feature name="lcdpcf8574">
-                <param name="android-package" value="org.apache.cordova.things.LcdPcf8574Plugin"/>
+                <param name="android-package" value="org.apache.cordova.android.things.driver.LcdPcf8574Plugin"/>
             </feature>
     	</config-file>
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <uses-library android:name="com.google.android.things"/>
         </config-file>
-    	<source-file src="src/android/GpioPlugin.java" target-dir="src/org/apache/cordova/things"/>
-        <source-file src="src/android/I2cPlugin.java" target-dir="src/org/apache/cordova/things"/>
-        <source-file src="src/android/UartPlugin.java" target-dir="src/org/apache/cordova/things"/>
-        <source-file src="src/android/LcdPcf8574.java" target-dir="src/com/nilhcem/androidthings/driver/lcdpcf8574"/>
-        <source-file src="src/android/LcdPcf8574Plugin.java" target-dir="src/org/apache/cordova/things"/>
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="com.google.android.things.permission.MANAGE_INPUT_DRIVERS" />
+        </config-file>
+        <source-file src="src/android/AndroidThingsPlugin.java" target-dir="src/org/apache/cordova/android/things"/>
+    	<source-file src="src/android/GpioPlugin.java" target-dir="src/org/apache/cordova/android/things"/>
+        <source-file src="src/android/I2cPlugin.java" target-dir="src/org/apache/cordova/android/things"/>
+        <source-file src="src/android/UartPlugin.java" target-dir="src/org/apache/cordova/android/things"/>
+        <source-file src="src/android/driver/ButtonPlugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
+        <source-file src="src/android/driver/MatrixKeypadPlugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
+        <source-file src="src/android/driver/Ssd1306Plugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
+        <source-file src="src/android/driver/LcdPcf8574Plugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
     	<source-file src="src/android/build-extras.gradle" target-dir="."/>
         <framework src="com.google.android.things:androidthings:0.6-devpreview"/>
+        <framework src="com.google.android.things.contrib:driver-button:+"/>
+        <framework src="com.google.android.things.contrib:driver-matrixkeypad:+"/>
+        <framework src="com.google.android.things.contrib:driver-ssd1306:+"/>
+        <framework src="com.nilhcem.androidthings:driver-lcd-pcf8574:+"/>
     </platform>
 </plugin>

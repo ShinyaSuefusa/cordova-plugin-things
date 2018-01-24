@@ -1,4 +1,4 @@
-package org.apache.cordova.things;
+package org.apache.cordova.android.things;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -23,19 +23,19 @@ import java.util.Map;
 public class UartPlugin extends CordovaPlugin {
 
     private PeripheralManagerService service = new PeripheralManagerService();
-    private Map<String, UartDevice> uartMap = new HashMap<String, UartDevice>();
-    private Map<String, UartDeviceCallback> callbackMap = new HashMap<String, UartDeviceCallback>();
+    private Map<String, UartDevice> deviceMap = new HashMap<>();
+    private Map<String, UartDeviceCallback> callbackMap = new HashMap<>();
 
     @Override
     public void onDestroy() {
-        for (String key : uartMap.keySet()) {
+        for (UartDevice device : deviceMap.values()) {
             try {
-                uartMap.get(key).close();
+                device.close();
             } catch(IOException e) {
                 // Do nothing.
             }
         }
-        uartMap.clear();
+        deviceMap.clear();
         callbackMap.clear();
     }
 
@@ -45,60 +45,63 @@ public class UartPlugin extends CordovaPlugin {
         if ("getUartDeviceList".equals(action)) {
             return getUartDeviceList(callbackContext);
         } else if ("openUartDevice".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            Integer rate = args.length() > 1 ? args.getInt(1) : null;
-            return openUartDevice(name, rate, callbackContext);
+            String name = args.getString(0);
+            return openUartDevice(name, callbackContext);
         } else if ("close".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
+            String name = args.getString(0);
             return close(name, callbackContext);
+        } else if ("closeAll".equals(action)) {
+            onDestroy();
+            callbackContext.success();
+            return true;
         } else if ("flush".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int direction = args.length() > 1 ? args.getInt(1) : UartDevice.FLUSH_IN_OUT;
+            String name = args.getString(0);
+            int direction = args.optInt(1, UartDevice.FLUSH_IN_OUT);
             return flush(name, direction, callbackContext);
         } else if ("read".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int length = args.length() > 1 ? args.getInt(1) : 1;
+            String name = args.getString(0);
+            int length = args.optInt(1, 1);
             return read(name, length, callbackContext);
         } else if ("sendBreak".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int duration_msec = args.length() > 1 ? args.getInt(1) : 0;
-            return sendBreak(name, duration_msec, callbackContext);
+            String name = args.getString(0);
+            int durationMsec = args.optInt(1, 0);
+            return sendBreak(name, durationMsec, callbackContext);
         } else if ("setBaudrate".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int rate = args.length() > 1 ? args.getInt(1) : 0;
+            String name = args.getString(0);
+            int rate = args.optInt(1, 0);
             return setBaudrate(name, rate, callbackContext);
         } else if ("setDataSize".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int size = args.length() > 1 ? args.getInt(1) : 0;
+            String name = args.getString(0);
+            int size = args.optInt(1, 0);
             return setDataSize(name, size, callbackContext);
         } else if ("setHardwareFlowControl".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int mode = args.length() > 1 ? args.getInt(1) : UartDevice.HW_FLOW_CONTROL_AUTO_RTSCTS;
+            String name = args.getString(0);
+            int mode = args.optInt(1, UartDevice.HW_FLOW_CONTROL_AUTO_RTSCTS);
             return setHardwareFlowControl(name, mode, callbackContext);
         } else if ("setModemControl".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int lines = args.length() > 1 ? args.getInt(1) : 0;
+            String name = args.getString(0);
+            int lines = args.optInt(1, 0);
             return setModemControl(name, lines, callbackContext);
         } else if ("setParity".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int mode = args.length() > 1 ? args.getInt(1) : 0;
+            String name = args.getString(0);
+            int mode = args.optInt(1, 0);
             return setParity(name, mode, callbackContext);
         } else if ("setStopBits".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int bits = args.length() > 1 ? args.getInt(1) : 0;
+            String name = args.getString(0);
+            int bits = args.optInt(1, 0);
             return setStopBits(name, bits, callbackContext);
         } else if ("write".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            JSONArray array = args.length() > 1 ? args.getJSONArray(1) : new JSONArray();
+            String name = args.getString(0);
+            JSONArray array = !args.isNull(1) ? args.optJSONArray(1) : new JSONArray();
             return write(name, array, callbackContext);
         } else if ("registerUartDeviceCallback".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
+            String name = args.getString(0);
             return registerUartDeviceCallback(name, callbackContext);
         } else if ("unregisterUartDeviceCallback".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
+            String name = args.getString(0);
             return unregisterUartDeviceCallback(name, callbackContext);
         }
-
+        callbackContext.error("undefined function. [" + action + "]");
         return false;
     }
 
@@ -112,21 +115,18 @@ public class UartPlugin extends CordovaPlugin {
         return true;
     }
 
-    private boolean openUartDevice(String name, Integer rate, CallbackContext callbackContext) {
+    private boolean openUartDevice(String name, CallbackContext callbackContext) {
         if (name == null) {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (uartMap.containsKey(name)) {
+        if (deviceMap.containsKey(name)) {
             callbackContext.error("already open!!");
             return false;
         }
         try {
-            UartDevice uart = service.openUartDevice(name);
-            if (rate != null) {
-                uart.setBaudrate(rate);
-            }
-            uartMap.put(name, uart);
+            UartDevice device = service.openUartDevice(name);
+            deviceMap.put(name, device);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -136,17 +136,17 @@ public class UartPlugin extends CordovaPlugin {
     }
 
     private boolean close(String name, CallbackContext callbackContext) {
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.close();
+            device.close();
         } catch (IOException e) {
             // Do nothing.
         }
-        uartMap.remove(name);
+        deviceMap.remove(name);
         callbackMap.remove(name);
         callbackContext.success();
         return true;
@@ -157,13 +157,13 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.flush(direction);
+            device.flush(direction);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -177,14 +177,14 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         byte[] buffer = new byte[length];
         try {
-            length = uart.read(buffer, length);
+            length = device.read(buffer, length);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -197,18 +197,18 @@ public class UartPlugin extends CordovaPlugin {
         return true;
     }
 
-    private boolean sendBreak(String name, int duration_msec, CallbackContext callbackContext) {
+    private boolean sendBreak(String name, int durationMsec, CallbackContext callbackContext) {
         if (name == null) {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.sendBreak(duration_msec);
+            device.sendBreak(durationMsec);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -222,13 +222,13 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.setBaudrate(rate);
+            device.setBaudrate(rate);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -242,13 +242,13 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.setDataSize(size);
+            device.setDataSize(size);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -262,13 +262,13 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.setHardwareFlowControl(mode);
+            device.setHardwareFlowControl(mode);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -282,13 +282,13 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.setModemControl(lines);
+            device.setModemControl(lines);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -302,13 +302,13 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.setParity(mode);
+            device.setParity(mode);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -322,13 +322,13 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         try {
-            uart.setStopBits(bits);
+            device.setStopBits(bits);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -342,11 +342,11 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         byte[] buffer = new byte[array.length()];
         try {
             for (int index = 0; index < array.length(); index++) {
@@ -358,7 +358,7 @@ public class UartPlugin extends CordovaPlugin {
         }
         int result;
         try {
-            result = uart.write(buffer, buffer.length);
+            result = device.write(buffer, buffer.length);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -372,7 +372,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
@@ -380,10 +380,10 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("already registered!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
+        UartDevice device = deviceMap.get(name);
         final UartPlugin plugin = this;
         final Handler handler = new Handler(Looper.getMainLooper());
-        UartDeviceCallback deviceCallback = new UartDeviceCallback() {
+        UartDeviceCallback callback = new UartDeviceCallback() {
             UartPlugin uartPlugin = plugin;
             @Override
             public boolean onUartDeviceDataAvailable(UartDevice uart) {
@@ -392,12 +392,12 @@ public class UartPlugin extends CordovaPlugin {
             }
         };
         try {
-            uart.registerUartDeviceCallback(deviceCallback, handler);
+            device.registerUartDeviceCallback(callback, handler);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
         }
-        callbackMap.put(name, deviceCallback);
+        callbackMap.put(name, callback);
         callbackContext.success();
         return true;
     }
@@ -407,7 +407,7 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!uartMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
@@ -415,9 +415,9 @@ public class UartPlugin extends CordovaPlugin {
             callbackContext.error("not registered!!");
             return false;
         }
-        UartDevice uart = uartMap.get(name);
-        UartDeviceCallback deviceCallback = callbackMap.get(name);
-        uart.unregisterUartDeviceCallback(deviceCallback);
+        UartDevice device = deviceMap.get(name);
+        UartDeviceCallback callback = callbackMap.get(name);
+        device.unregisterUartDeviceCallback(callback);
         callbackMap.remove(name);
         callbackContext.success();
         return true;

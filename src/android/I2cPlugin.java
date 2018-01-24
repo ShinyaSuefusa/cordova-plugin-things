@@ -1,4 +1,4 @@
-package org.apache.cordova.things;
+package org.apache.cordova.android.things;
 
 import com.google.android.things.pio.I2cDevice;
 import com.google.android.things.pio.PeripheralManagerService;
@@ -19,18 +19,18 @@ import java.util.Map;
 public class I2cPlugin extends CordovaPlugin {
 
     private PeripheralManagerService service = new PeripheralManagerService();
-    private Map<String, I2cDevice> i2cMap = new HashMap<String, I2cDevice>();
+    private Map<String, I2cDevice> deviceMap = new HashMap<>();
 
     @Override
     public void onDestroy() {
-        for (I2cDevice i2cDevice : i2cMap.values()) {
+        for (I2cDevice device : deviceMap.values()) {
             try {
-                i2cDevice.close();
+                device.close();
             } catch(IOException e) {
                 // Do nothing.
             }
         }
-        i2cMap.clear();
+        deviceMap.clear();
     }
 
     @Override
@@ -39,50 +39,54 @@ public class I2cPlugin extends CordovaPlugin {
         if ("getI2cBusList".equals(action)) {
             return getI2cBusList(callbackContext);
         } else if ("openI2cDevice".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int address = args.length() > 1 ? args.getInt(1) : 0;
+            String name = args.getString(0);
+            int address = args.optInt(1, 0);
             return openI2cDevice(name, address, callbackContext);
         } else if ("close".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
+            String name = args.getString(0);
             return close(name, callbackContext);
+        } else if ("closeAll".equals(action)) {
+            onDestroy();
+            callbackContext.success();
+            return true;
         } else if ("read".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int length = args.length() > 1 ? args.getInt(1) : 1;
+            String name = args.getString(0);
+            int length = args.optInt(1, 1);
             return read(name, length, callbackContext);
         } else if ("readRegBuffer".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int reg = args.length() > 1 ? args.getInt(1) : 0;
-            int length = args.length() > 2 ? args.getInt(2) : 1;
+            String name = args.getString(0);
+            int reg = args.optInt(1, 0);
+            int length = args.optInt(2, 1);
             return readRegBuffer(name, reg, length, callbackContext);
         } else if ("readRegByte".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int reg = args.length() > 1 ? args.getInt(1) : 0;
+            String name = args.getString(0);
+            int reg = args.optInt(1, 0);
             return readRegByte(name, reg, callbackContext);
         } else if ("readRegWord".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int reg = args.length() > 1 ? args.getInt(1) : 0;
+            String name = args.getString(0);
+            int reg = args.optInt(1, 0);
             return readRegWord(name, reg, callbackContext);
         } else if ("write".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            JSONArray array = args.length() > 1 ? args.getJSONArray(1) : new JSONArray();
+            String name = args.getString(0);
+            JSONArray array = !args.isNull(1) ? args.optJSONArray(1) : new JSONArray();
             return write(name, array, callbackContext);
         } else if ("writeRegBuffer".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int reg = args.length() > 1 ? args.getInt(1) : 0;
-            JSONArray array = args.length() > 2 ? args.getJSONArray(2) : new JSONArray();
+            String name = args.getString(0);
+            int reg = args.optInt(1, 0);
+            JSONArray array = !args.isNull(2) ? args.optJSONArray(2) : new JSONArray();
             return writeRegBuffer(name, reg, array, callbackContext);
         } else if ("writeRegByte".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int reg = args.length() > 1 ? args.getInt(1) : 0;
-            int data = args.length() > 2 ? args.getInt(2) : 0;
+            String name = args.getString(0);
+            int reg = args.optInt(1, 0);
+            int data = args.optInt(2, 0);
             return writeRegByte(name, reg, data, callbackContext);
         } else if ("writeRegWord".equals(action)) {
-            String name = args.length() > 0 ? args.getString(0) : null;
-            int reg = args.length() > 1 ? args.getInt(1) : 0;
-            int data = args.length() > 2 ? args.getInt(2) : 0;
+            String name = args.getString(0);
+            int reg = args.optInt(1, 0);
+            int data = args.optInt(2, 0);
             return writeRegWord(name, reg, data, callbackContext);
         }
-
+        callbackContext.error("undefined function. [" + action + "]");
         return false;
     }
 
@@ -101,13 +105,13 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (i2cMap.containsKey(name)) {
+        if (deviceMap.containsKey(name)) {
             callbackContext.error("already open!!");
             return false;
         }
         try {
-            I2cDevice i2cDevice = service.openI2cDevice(name, address);
-            i2cMap.put(name, i2cDevice);
+            I2cDevice device = service.openI2cDevice(name, address);
+            deviceMap.put(name, device);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -121,17 +125,17 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         try {
-            i2cDevice.close();
+            device.close();
         } catch(IOException e) {
             // Do nothing.
         }
-        i2cMap.remove(name);
+        deviceMap.remove(name);
         callbackContext.success();
         return true;
     }
@@ -141,14 +145,14 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         byte[] buffer = new byte[length];
         try {
-            i2cDevice.read(buffer, length);
+            device.read(buffer, length);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -166,14 +170,14 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         byte[] buffer = new byte[length];
         try {
-            i2cDevice.readRegBuffer(reg, buffer, length);
+            device.readRegBuffer(reg, buffer, length);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -191,14 +195,14 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         int data;
         try {
-            data = i2cDevice.readRegByte(reg);
+            data = device.readRegByte(reg);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -212,14 +216,14 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         int data;
         try {
-            data = i2cDevice.readRegWord(reg);
+            data = device.readRegWord(reg);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -233,11 +237,11 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         byte[] buffer = new byte[array.length()];
         try {
             for (int index = 0; index < array.length(); index++) {
@@ -248,7 +252,7 @@ public class I2cPlugin extends CordovaPlugin {
             return false;
         }
         try {
-            i2cDevice.write(buffer, buffer.length);
+            device.write(buffer, buffer.length);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -262,11 +266,11 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         byte[] buffer = new byte[array.length()];
         try {
             for (int index = 0; index < array.length(); index++) {
@@ -277,7 +281,7 @@ public class I2cPlugin extends CordovaPlugin {
             return false;
         }
         try {
-            i2cDevice.writeRegBuffer(reg, buffer, buffer.length);
+            device.writeRegBuffer(reg, buffer, buffer.length);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -291,13 +295,13 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         try {
-            i2cDevice.writeRegByte(reg, (byte)data);
+            device.writeRegByte(reg, (byte)data);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
@@ -311,13 +315,13 @@ public class I2cPlugin extends CordovaPlugin {
             callbackContext.error("name is null!!");
             return false;
         }
-        if (!i2cMap.containsKey(name)) {
+        if (!deviceMap.containsKey(name)) {
             callbackContext.error("not open!!");
             return false;
         }
-        I2cDevice i2cDevice = i2cMap.get(name);
+        I2cDevice device = deviceMap.get(name);
         try {
-            i2cDevice.writeRegWord(reg, (short)data);
+            device.writeRegWord(reg, (short)data);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;
