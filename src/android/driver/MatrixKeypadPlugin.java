@@ -38,7 +38,7 @@ public class MatrixKeypadPlugin extends CordovaPlugin {
             return true;
         }
 
-        String name = args.getString(0);
+        String name = args.optString(0);
         if (name == null) {
             callbackContext.error("name is null!!");
             return false;

@@ -37,6 +37,9 @@
             <feature name="lcdpcf8574">
                 <param name="android-package" value="org.apache.cordova.android.things.driver.LcdPcf8574Plugin"/>
             </feature>
+            <feature name="rc522">
+                <param name="android-package" value="org.apache.cordova.android.things.driver.Rc522Plugin"/>
+            </feature>
     	</config-file>
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <uses-library android:name="com.google.android.things"/>
@@ -52,11 +55,14 @@
         <source-file src="src/android/driver/MatrixKeypadPlugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
         <source-file src="src/android/driver/Ssd1306Plugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
         <source-file src="src/android/driver/LcdPcf8574Plugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
+        <source-file src="src/android/driver/Rc522Plugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
+        <source-file src="src/android/driver/wrapper/Rc522Wrapper.java" target-dir="src/org/apache/cordova/android/things/driver/wrapper"/>
     	<source-file src="src/android/build-extras.gradle" target-dir="."/>
         <framework src="com.google.android.things:androidthings:0.6-devpreview"/>
         <framework src="com.google.android.things.contrib:driver-button:+"/>
         <framework src="com.google.android.things.contrib:driver-matrixkeypad:+"/>
         <framework src="com.google.android.things.contrib:driver-ssd1306:+"/>
         <framework src="com.nilhcem.androidthings:driver-lcd-pcf8574:+"/>
+        <framework src="com.galarzaa.android-things:rc522:+"/>
     </platform>
 </plugin>

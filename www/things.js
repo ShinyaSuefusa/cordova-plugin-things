@@ -831,3 +831,171 @@ function LcdPcf8574Plugin() {
 
 exports.lcdpcf8574 = new LcdPcf8574Plugin();
 
+
+function Rc522(name) {
+	this.name = name;
+}
+Rc522.prototype.getName = function () {
+	return this.name;
+};
+Rc522.prototype.close = function (success, error) {
+	return exports.rc522.close(this.name, success, error);
+};
+Rc522.prototype.setDebugging = function (debugging, success, error) {
+	return exports.rc522.setDebugging(this.name, debugging, success, error);
+};
+Rc522.prototype.getUid = function (success, error) {
+	return exports.rc522.getUid(this.name, success, error);
+};
+Rc522.prototype.getUidString = function (success, error) {
+	return exports.rc522.getUidString(this.name, success, error);
+};
+Rc522.prototype.request = function (success, error) {
+	return exports.rc522.request(this.name, success, error);
+};
+Rc522.prototype.requestMode = function (requestMode, success, error) {
+	return exports.rc522.requestMode(this.name, requestMode, success, error);
+};
+Rc522.prototype.antiCollisionDetect = function (success, error) {
+	return exports.rc522.antiCollisionDetect(this.name, success, error);
+};
+Rc522.prototype.selectTag = function (selectTag, success, error) {
+	return exports.rc522.selectTag(this.name, selectTag, success, error);
+};
+Rc522.prototype.authenticateCard = function (authMode, address, key, success, error) {
+	return exports.rc522.authenticateCard(this.name, authMode, address, key, success, error);
+};
+Rc522.prototype.stopCrypto = function (success, error) {
+	return exports.rc522.stopCrypto(this.name, success, error);
+};
+Rc522.prototype.readBlock = function (address, success, error) {
+	return exports.rc522.readBlock(this.name, address, success, error);
+};
+Rc522.prototype.writeBlock = function (address, data, success, error) {
+	return exports.rc522.writeBlock(this.name, address, data, success, error);
+};
+Rc522.prototype.increaseBlock = function (address, operand, success, error) {
+	return exports.rc522.increaseBlock(this.name, address, operand, success, error);
+};
+Rc522.prototype.decreaseBlock = function (address, operand, success, error) {
+	return exports.rc522.decreaseBlock(this.name, address, operand, success, error);
+};
+Rc522.prototype.transferBlock = function (address, success, error) {
+	return exports.rc522.transferBlock(this.name, address, success, error);
+};
+Rc522.prototype.restoreBlock = function (address, success, error) {
+	return exports.rc522.restoreBlock(this.name, address, success, error);
+};
+Rc522.prototype.writeValue = function (address, value, success, error) {
+	return exports.rc522.writeValue(this.name, address, value, success, error);
+};
+Rc522.prototype.readValue = function (address, success, error) {
+	return exports.rc522.readValue(this.name, address, success, error);
+};
+Rc522.prototype.writeTrailer = function (sector, keyA, accessBits, userData, keyB, success, error) {
+	return exports.rc522.writeTrailer(this.name, sector, keyA, accessBits, userData, keyB, uccess, error);
+};
+Rc522.prototype.dumpMifare1k = function (success, error) {
+	return exports.rc522.dumpMifare1k(this.name, success, error);
+};
+
+function Rc522Plugin() {
+	this.open = function (name, spiName, gpioName, success, error) {
+	    return new Promise(function (resolve, reject) {
+			exec(function () {
+				var device = new Rc522(name, spiName, gpioName);
+				resolve(device);
+				if (success) success(device);
+			}, function (result) {
+				reject(result);
+				if (error) error(result);
+			}, 'rc522', 'open', [name, spiName, gpioName]);
+		});
+	};
+
+	this.close = function (name, success, error) {
+		return promiseExec(success, error, 'rc522', 'close', [name]);
+	};
+
+	this.closeAll = function (success, error) {
+		return promiseExec(success, error, 'rc522', 'closeAll', []);
+	};
+
+	this.setDebugging = function (name, debugging, success, error) {
+		return promiseExec(success, error, 'rc522', 'setDebugging', [name, debugging]);
+	};
+
+	this.getUid = function (name, success, error) {
+		return promiseExec(success, error, 'rc522', 'getUid', [name]);
+	};
+
+	this.getUidString = function (name, separator, success, error) {
+		return promiseExec(success, error, 'rc522', 'getUidString', [name, separator]);
+	};
+
+	this.request = function (name, success, error) {
+		return promiseExec(success, error, 'rc522', 'request', [name]);
+	};
+
+	this.requestMode = function (name, requestMode, success, error) {
+		return promiseExec(success, error, 'rc522', 'request', [name, requestMode]);
+	};
+
+	this.antiCollisionDetect = function (name, success, error) {
+		return promiseExec(success, error, 'rc522', 'antiCollisionDetect', [name]);
+	};
+
+	this.selectTag = function (name, selectTag, success, error) {
+		return promiseExec(success, error, 'rc522', 'selectTag', [name, selectTag]);
+	};
+
+	this.authenticateCard = function (name, authMode, address, key, success, error) {
+		return promiseExec(success, error, 'rc522', 'authenticateCard', [name, authMode, address, key]);
+	};
+
+	this.stopCrypto = function (name, success, error) {
+		return promiseExec(success, error, 'rc522', 'stopCrypto', [name]);
+	};
+
+	this.readBlock = function (name, address, success, error) {
+		return promiseExec(success, error, 'rc522', 'readBlock', [name, address]);
+	};
+
+	this.writeBlock = function (name, address, data, success, error) {
+		return promiseExec(success, error, 'rc522', 'writeBlock', [name, address, data]);
+	};
+
+	this.increaseBlock = function (name, address, operand, success, error) {
+		return promiseExec(success, error, 'rc522', 'increaseBlock', [name, address, operand]);
+	};
+
+	this.decreaseBlock = function (name, address, operand, success, error) {
+		return promiseExec(success, error, 'rc522', 'decreaseBlock', [name, address, operand]);
+	};
+
+	this.transferBlock = function (name, address, success, error) {
+		return promiseExec(success, error, 'rc522', 'transferBlock', [name, address]);
+	};
+
+	this.restoreBlock = function (name, address, success, error) {
+		return promiseExec(success, error, 'rc522', 'restoreBlock', [name, address]);
+	};
+
+	this.writeValue = function (name, address, value, success, error) {
+		return promiseExec(success, error, 'rc522', 'writeValue', [name, address, value]);
+	};
+
+	this.readValue = function (name, address, success, error) {
+		return promiseExec(success, error, 'rc522', 'readValue', [name, address]);
+	};
+
+	this.writeTrailer = function (name, sector, keyA, accessBits, userData, keyB, success, error) {
+		return promiseExec(success, error, 'rc522', 'writeTrailer', [name, sector, keyA, accessBits, userData, keyB]);
+	};
+
+	this.dumpMifare1k = function (name, success, error) {
+		return promiseExec(success, error, 'rc522', 'dumpMifare1k', [name]);
+	};
+}
+
+exports.rc522 = new Rc522Plugin();
