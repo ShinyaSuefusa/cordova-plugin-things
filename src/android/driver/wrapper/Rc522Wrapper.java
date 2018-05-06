@@ -1,7 +1,5 @@
 package org.apache.cordova.android.things.driver.wrapper;
 
-import android.support.annotation.Nullable;
-
 import com.galarzaa.androidthings.Rc522;
 import com.google.android.things.pio.Gpio;
 import com.google.android.things.pio.PeripheralManagerService;
@@ -152,7 +150,6 @@ public class Rc522Wrapper {
     /**
      * @see Rc522#readValue(byte)
      */
-    @Nullable
     public Integer readValue(byte address) {
         return this.rc522.readValue(address);
     }

@@ -58,7 +58,7 @@
         <source-file src="src/android/driver/Rc522Plugin.java" target-dir="src/org/apache/cordova/android/things/driver"/>
         <source-file src="src/android/driver/wrapper/Rc522Wrapper.java" target-dir="src/org/apache/cordova/android/things/driver/wrapper"/>
     	<source-file src="src/android/build-extras.gradle" target-dir="."/>
-        <framework src="com.google.android.things:androidthings:0.6-devpreview"/>
+        <framework src="com.google.android.things:androidthings:+"/>
         <framework src="com.google.android.things.contrib:driver-button:+"/>
         <framework src="com.google.android.things.contrib:driver-matrixkeypad:+"/>
         <framework src="com.google.android.things.contrib:driver-ssd1306:+"/>
