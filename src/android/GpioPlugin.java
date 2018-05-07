@@ -5,7 +5,7 @@ import android.os.Looper;
 
 import com.google.android.things.pio.Gpio;
 import com.google.android.things.pio.GpioCallback;
-import com.google.android.things.pio.PeripheralManagerService;
+import com.google.android.things.pio.PeripheralManager;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class GpioPlugin extends CordovaPlugin {
 
-    private PeripheralManagerService service = new PeripheralManagerService();
+    private PeripheralManager manager = PeripheralManager.getInstance();
     private Map<String, Gpio> deviceMap = new HashMap<>();
     private Map<String, GpioCallback> callbackMap = new HashMap<>();
 
@@ -86,7 +86,7 @@ public class GpioPlugin extends CordovaPlugin {
     }
 
     private boolean getGpioList(CallbackContext callbackContext) {
-        List<String> list = service.getGpioList();
+        List<String> list = manager.getGpioList();
         JSONArray array = new JSONArray();
         for (String name : list) {
             array.put(name);
@@ -105,7 +105,7 @@ public class GpioPlugin extends CordovaPlugin {
             return false;
         }
         try {
-            Gpio device = service.openGpio(name);
+            Gpio device = manager.openGpio(name);
             device.setDirection(direction);
             deviceMap.put(name, device);
         } catch(IOException e) {
@@ -262,11 +262,11 @@ public class GpioPlugin extends CordovaPlugin {
             @Override
             public boolean onGpioEdge(Gpio gpio) {
                 gpioPlugin.webView.getEngine().evaluateJavascript("(function() {cordova.plugins.things.gpio.callback('"+gpio.getName()+"');})();", null);
-                return super.onGpioEdge(gpio);
+                return true;
             }
         };
         try {
-            device.registerGpioCallback(callback, handler);
+            device.registerGpioCallback(handler, callback);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());
             return false;

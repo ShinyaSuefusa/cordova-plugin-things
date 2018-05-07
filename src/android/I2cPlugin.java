@@ -1,7 +1,7 @@
 package org.apache.cordova.android.things;
 
 import com.google.android.things.pio.I2cDevice;
-import com.google.android.things.pio.PeripheralManagerService;
+import com.google.android.things.pio.PeripheralManager;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class I2cPlugin extends CordovaPlugin {
 
-    private PeripheralManagerService service = new PeripheralManagerService();
+    private PeripheralManager manager = PeripheralManager.getInstance();
     private Map<String, I2cDevice> deviceMap = new HashMap<>();
 
     @Override
@@ -91,7 +91,7 @@ public class I2cPlugin extends CordovaPlugin {
     }
 
     private boolean getI2cBusList(CallbackContext callbackContext) {
-        List<String> list = service.getI2cBusList();
+        List<String> list = manager.getI2cBusList();
         JSONArray array = new JSONArray();
         for (String name : list) {
             array.put(name);
@@ -110,7 +110,7 @@ public class I2cPlugin extends CordovaPlugin {
             return false;
         }
         try {
-            I2cDevice device = service.openI2cDevice(name, address);
+            I2cDevice device = manager.openI2cDevice(name, address);
             deviceMap.put(name, device);
         } catch(IOException e) {
             callbackContext.error(e.getMessage());

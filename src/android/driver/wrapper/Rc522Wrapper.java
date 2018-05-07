@@ -1,8 +1,10 @@
 package org.apache.cordova.android.things.driver.wrapper;
 
+import android.support.annotation.Nullable;
+
 import com.galarzaa.androidthings.Rc522;
 import com.google.android.things.pio.Gpio;
-import com.google.android.things.pio.PeripheralManagerService;
+import com.google.android.things.pio.PeripheralManager;
 import com.google.android.things.pio.SpiDevice;
 
 import java.io.IOException;
@@ -15,11 +17,11 @@ public class Rc522Wrapper {
     private Gpio gpio;
     private Rc522 rc522;
 
-    private PeripheralManagerService service = new PeripheralManagerService();
+    private PeripheralManager manager = PeripheralManager.getInstance();
 
     public Rc522Wrapper(String spiName, String gpioName) throws IOException {
-        this.spi = service.openSpiDevice(spiName);
-        this.gpio = service.openGpio(gpioName);
+        this.spi = manager.openSpiDevice(spiName);
+        this.gpio = manager.openGpio(gpioName);
         this.rc522 = new Rc522(this.spi, this.gpio);
     }
 
@@ -150,6 +152,7 @@ public class Rc522Wrapper {
     /**
      * @see Rc522#readValue(byte)
      */
+    @Nullable
     public Integer readValue(byte address) {
         return this.rc522.readValue(address);
     }

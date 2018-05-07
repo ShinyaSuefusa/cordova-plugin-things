@@ -3,7 +3,7 @@ package org.apache.cordova.android.things;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.google.android.things.pio.PeripheralManagerService;
+import com.google.android.things.pio.PeripheralManager;
 import com.google.android.things.pio.UartDevice;
 import com.google.android.things.pio.UartDeviceCallback;
 
@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class UartPlugin extends CordovaPlugin {
 
-    private PeripheralManagerService service = new PeripheralManagerService();
+    private PeripheralManager manager = PeripheralManager.getInstance();
     private Map<String, UartDevice> deviceMap = new HashMap<>();
     private Map<String, UartDeviceCallback> callbackMap = new HashMap<>();
 
@@ -106,7 +106,7 @@ public class UartPlugin extends CordovaPlugin {
     }
 
     private boolean getUartDeviceList(CallbackContext callbackContext) {
-        List<String> list = service.getUartDeviceList();
+        List<String> list = manager.getUartDeviceList();
         JSONArray array = new JSONArray();
         for (String name : list) {
             array.put(name);
@@ -125,7 +125,7 @@ public class UartPlugin extends CordovaPlugin {
             return false;
         }
         try {
-            UartDevice device = service.openUartDevice(name);
+            UartDevice device = manager.openUartDevice(name);
             deviceMap.put(name, device);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
@@ -388,11 +388,11 @@ public class UartPlugin extends CordovaPlugin {
             @Override
             public boolean onUartDeviceDataAvailable(UartDevice uart) {
                 uartPlugin.webView.getEngine().evaluateJavascript("(function() {cordova.plugins.things.uart.callback('"+uart.getName()+"');})();", null);
-                return super.onUartDeviceDataAvailable(uart);
+                return true;
             }
         };
         try {
-            device.registerUartDeviceCallback(callback, handler);
+            device.registerUartDeviceCallback(handler, callback);
         } catch (IOException e) {
             callbackContext.error(e.getMessage());
             return false;

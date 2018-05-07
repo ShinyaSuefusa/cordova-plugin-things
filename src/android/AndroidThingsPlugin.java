@@ -14,19 +14,24 @@ public class AndroidThingsPlugin extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if ("getVersionMajor".equals(action)) {
-            callbackContext.success(AndroidThings.getVersionMajor());
+            //callbackContext.success(AndroidThings.getVersionMajor());
+            callbackContext.error("unsupported function. [" + action + "]");
             return true;
         } else if ("getVersionMinor".equals(action)) {
-            callbackContext.success(AndroidThings.getVersionMinor());
+            //callbackContext.success(AndroidThings.getVersionMinor());
+            callbackContext.error("unsupported function. [" + action + "]");
             return true;
         } else if ("getVersionRevision".equals(action)) {
-            callbackContext.success(AndroidThings.getVersionRevision());
+            //callbackContext.success(AndroidThings.getVersionRevision());
+            callbackContext.error("unsupported function. [" + action + "]");
             return true;
         } else if ("getVersionString".equals(action)) {
-            callbackContext.success(AndroidThings.getVersionString());
+            //callbackContext.success(AndroidThings.getVersionString());
+            callbackContext.error("unsupported function. [" + action + "]");
             return true;
         } else if ("getVersionTag".equals(action)) {
-            callbackContext.success(AndroidThings.getVersionTag());
+            //callbackContext.success(AndroidThings.getVersionTag());
+            callbackContext.error("unsupported function. [" + action + "]");
             return true;
         }
         callbackContext.error("undefined function. [" + action + "]");
