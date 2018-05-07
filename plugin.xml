@@ -45,6 +45,7 @@
             <uses-library android:name="com.google.android.things"/>
         </config-file>
         <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="com.google.android.things.permission.USE_PERIPHERAL_IO" />
             <uses-permission android:name="com.google.android.things.permission.MANAGE_INPUT_DRIVERS" />
         </config-file>
         <source-file src="src/android/AndroidThingsPlugin.java" target-dir="src/org/apache/cordova/android/things"/>
