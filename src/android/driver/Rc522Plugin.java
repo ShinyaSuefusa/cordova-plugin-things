@@ -29,7 +29,7 @@ public class Rc522Plugin extends CordovaPlugin {
     }
 
     @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+    public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
         if ("closeAll".equals(action)) {
             onDestroy();
             callbackContext.success();
@@ -57,7 +57,7 @@ public class Rc522Plugin extends CordovaPlugin {
                 callbackContext.error("not open!!");
                 return false;
             }
-            Rc522Wrapper device = deviceMap.get(name);
+            final Rc522Wrapper device = deviceMap.get(name);
             if ("close".equals(action)) {
                 close(device, name);
                 callbackContext.success();
@@ -77,147 +77,232 @@ public class Rc522Plugin extends CordovaPlugin {
                 callbackContext.success(result);
                 return true;
             } else if ("request".equals(action)) {
-                boolean result = device.request();
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("request failed.");
-                }
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.request();
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("request failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("requestMode".equals(action)) {
-                byte requestMode = (byte)args.optInt(1,0);
-                boolean result = device.request(requestMode);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("request failed.");
-                }
+                final byte requestMode = (byte)args.optInt(1,0);
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.request(requestMode);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("request failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("antiCollisionDetect".equals(action)) {
-                boolean result = device.antiCollisionDetect();
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("collision detected.");
-                }
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.antiCollisionDetect();
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("collision detected.");
+                        }
+                    }
+                });
                 return true;
             } else if ("selectTag".equals(action)) {
-                byte[] selectTag = toByteArray(args.optJSONArray(1));
-                boolean result = device.selectTag(selectTag);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("select failed.");
-                }
+                final byte[] selectTag = toByteArray(args.optJSONArray(1));
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.selectTag(selectTag);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("select failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("authenticateCard".equals(action)) {
-                byte authMode = (byte)args.optInt(1, 0);
-                byte address = (byte)args.optInt(2, 0);
-                byte[] key = toByteArray(args.optJSONArray(3));
-                boolean result = device.authenticateCard(authMode, address, key);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("authenticate failed.");
-                }
+                final byte authMode = (byte)args.optInt(1, 0);
+                final byte address = (byte)args.optInt(2, 0);
+                final byte[] key = toByteArray(args.optJSONArray(3));
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.authenticateCard(authMode, address, key);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("authenticate failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("stopCrypto".equals(action)) {
-                device.stopCrypto();
-                callbackContext.success();
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        device.stopCrypto();
+                        callbackContext.success();
+                    }
+                });
                 return true;
             } else if ("readBlock".equals(action)) {
-                byte address = (byte)args.optInt(1, 0);
-                byte[] buffer = new byte[16];
-                boolean result = device.readBlock(address, buffer);
-                if (result) {
-                    callbackContext.success(toJsonArray(buffer));
-                } else {
-                    callbackContext.error("readBlock failed.");
-                }
+                final byte address = (byte)args.optInt(1, 0);
+                final byte[] buffer = new byte[16];
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.readBlock(address, buffer);
+                        if (result) {
+                            try {
+                                callbackContext.success(toJsonArray(buffer));
+                            } catch(JSONException e) {
+                                callbackContext.error("readBlock failed.");
+                            }
+                        } else {
+                            callbackContext.error("readBlock failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("writeBlock".equals(action)) {
-                byte address = (byte)args.optInt(1, 0);
-                byte[] data = toByteArray(args.optJSONArray(2));
-                boolean result = device.writeBlock(address, data);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("writeBlock failed.");
-                }
+                final byte address = (byte)args.optInt(1, 0);
+                final byte[] data = toByteArray(args.optJSONArray(2));
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.writeBlock(address, data);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("writeBlock failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("increaseBlock".equals(action)) {
-                byte address = (byte)args.optInt(1, 0);
-                int operand = args.optInt(2,0);
-                boolean result = device.increaseBlock(address, operand);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("increaseBlock failed.");
-                }
+                final byte address = (byte)args.optInt(1, 0);
+                final int operand = args.optInt(2,0);
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.increaseBlock(address, operand);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("increaseBlock failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("decreaseBlock".equals(action)) {
-                byte address = (byte)args.optInt(1, 0);
-                int operand = args.optInt(2,0);
-                boolean result = device.decreaseBlock(address, operand);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("decreaseBlock failed.");
-                }
+                final byte address = (byte)args.optInt(1, 0);
+                final int operand = args.optInt(2,0);
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.decreaseBlock(address, operand);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("decreaseBlock failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("transferBlock".equals(action)) {
-                byte address = (byte)args.optInt(1, 0);
-                boolean result = device.transferBlock(address);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("transferBlock failed.");
-                }
+                final byte address = (byte)args.optInt(1, 0);
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.transferBlock(address);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("transferBlock failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("restoreBlock".equals(action)) {
-                byte address = (byte)args.optInt(1, 0);
-                boolean result = device.restoreBlock(address);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("restoreBlock failed.");
-                }
+                final byte address = (byte)args.optInt(1, 0);
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.restoreBlock(address);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("restoreBlock failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("writeValue".equals(action)) {
-                byte address = (byte)args.optInt(1, 0);
-                int value = args.optInt(2, 0);
-                boolean result = device.writeValue(address, value);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("writeValue failed.");
-                }
+                final byte address = (byte)args.optInt(1, 0);
+                final int value = args.optInt(2, 0);
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.writeValue(address, value);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("writeValue failed.");
+                        }
+
+                    }
+                });
                 return true;
             } else if ("readValue".equals(action)) {
-                byte address = (byte)args.optInt(1, 0);
-                Integer result = device.readValue(address);
-                if (result != null) {
-                    callbackContext.success(result);
-                } else {
-                    callbackContext.error("readValue failed.");
-                }
+                final byte address = (byte)args.optInt(1, 0);
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        Integer result = device.readValue(address);
+                        if (result != null) {
+                            callbackContext.success(result);
+                        } else {
+                            callbackContext.error("readValue failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("writeTrailer".equals(action)) {
-                byte sector = (byte)args.optInt(1,0);
-                byte[] keyA = toByteArray(args.optJSONArray(2));
-                byte[] accessBits = toByteArray(args.optJSONArray(3));
-                byte userData = (byte)args.optInt(4, 0);
-                byte[] keyB = toByteArray(args.optJSONArray(5));
-                boolean result = device.writeTrailer(sector, keyA, accessBits, userData, keyB);
-                if (result) {
-                    callbackContext.success();
-                } else {
-                    callbackContext.error("writeTrailer failed.");
-                }
+                final byte sector = (byte)args.optInt(1,0);
+                final byte[] keyA = toByteArray(args.optJSONArray(2));
+                final byte[] accessBits = toByteArray(args.optJSONArray(3));
+                final byte userData = (byte)args.optInt(4, 0);
+                final byte[] keyB = toByteArray(args.optJSONArray(5));
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = device.writeTrailer(sector, keyA, accessBits, userData, keyB);
+                        if (result) {
+                            callbackContext.success();
+                        } else {
+                            callbackContext.error("writeTrailer failed.");
+                        }
+                    }
+                });
                 return true;
             } else if ("dumpMifare1k".equals(action)) {
-                String result = device.dumpMifare1k();
-                callbackContext.success(result);
+                cordova.getThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        String result = device.dumpMifare1k();
+                        callbackContext.success(result);
+                    }
+                });
                 return true;
             }
         } catch(Exception e) {
