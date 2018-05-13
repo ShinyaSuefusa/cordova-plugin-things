@@ -32,6 +32,10 @@ function AndroidThingsPlugin() {
 	this.getVersionTag = function (success, error) {
 		return promiseExec(success, error, 'androidthings', 'getVersionTag', []);
 	};
+
+	this.startDefaultIoTLauncher = function (success, error) {
+		return promiseExec(success, error, 'androidthings', 'startDefaultIoTLauncher', []);
+	};
 }
 
 exports.androidthings = new AndroidThingsPlugin();
