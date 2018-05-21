@@ -44,6 +44,16 @@ public class AndroidThingsPlugin extends CordovaPlugin {
             ((CordovaActivity)this.cordova.getActivity()).startActivity(intent);
             callbackContext.success();
             return true;
+        } else if ("startLauncherActivity".equals(action)) {
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            String packageName = args.getString(0);
+            String className = args.getString(1);
+            intent.setClassName(packageName, className);
+            ((CordovaActivity)this.cordova.getActivity()).startActivity(intent);
+            callbackContext.success();
+            return true;
         }
         callbackContext.error("undefined function. [" + action + "]");
         return false;

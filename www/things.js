@@ -36,6 +36,9 @@ function AndroidThingsPlugin() {
 	this.startDefaultIoTLauncher = function (success, error) {
 		return promiseExec(success, error, 'androidthings', 'startDefaultIoTLauncher', []);
 	};
+	this.startLauncherActivity = function (packageName, className, success, error) {
+		return promiseExec(success, error, 'androidthings', 'startLauncherActivity', [packageName, className]);
+	};
 }
 
 exports.androidthings = new AndroidThingsPlugin();
